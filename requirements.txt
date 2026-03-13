@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+langchain
+langchain-openai
+langchain-pinecone
+pinecone-client
+unstructured[pdf]
+python-dotenv
+pydantic
+tiktoken
+python-multipart
