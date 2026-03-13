@@ -1,49 +1,53 @@
-# DocuMind Enterprise: RAG-based SOP Assistant
+# 🧠 DocuMind Enterprise - RAG SOP Assistant
 
-A high-performance RAG (Retrieval-Augmented Generation) assistant designed for corporate Standard Operating Procedures (SOPs). Built with FastAPI, LangChain, OpenAI, and Pinecone.
+Hey! This is a high-performance RAG (Retrieval-Augmented Generation) assistant built specifically for digging through massive corporate SOPs (Standard Operating Procedures). 
 
-## Features
-- **PDF Ingestion:** Robust PDF parsing using `unstructured`.
-- **Advanced RAG:** Retrieval-focused chunking and semantic search.
-- **Accuracy & Safety:** Hallucination guardrails and source citations (page numbers).
-- **FastAPI Interface:** Easy-to-use API endpoints for ingestion and querying.
+Instead of manual scrolling, just ask a question and let the AI do the heavy lifting. It fetches the exact page numbers so you can verify everything instantly.
 
-## Tech Stack
-- **Backend:** FastAPI, Python
-- **Orchestration:** LangChain
-- **LLM:** OpenAI (GPT-4o)
-- **Vector DB:** Pinecone
-- **Parser:** Unstructured.io
+## 🚀 What's inside?
+- **Fast Parsing:** Uses `unstructured` to handle messy PDFs without breaking a sweat.
+- **Smart Retrieval:** Uses Pinecone to find exactly what you need in seconds.
+- **No BS Guardrails:** If the info isn't in your docs, the AI won't make stuff up. It'll just tell you it doesn't know.
+- **Citations included:** Every answer comes with the page number it found it on.
 
-## Setup Instructions
+## 🛠 Tech Stack
+- **FastAPI** (for the heavy lifting API)
+- **LangChain** (the glue holding it together)
+- **OpenAI GPT-4o** (the brain)
+- **Pinecone** (the memory)
 
-1. **Clone the repository:**
+## 🔧 Getting Started
+
+1. **Clone it:**
    ```bash
-   git clone <your-repo-url>
+   git clone <your-repo-link>
    cd Rag-Sop-Assistant
    ```
 
-2. **Create Virtual Environment:**
+2. **Setup your environment:**
+   Make sure you've got Python installed, then:
    ```bash
    python -m venv venv
-   .\venv\Scripts\activate
-   ```
-
-3. **Install Dependencies:**
-   ```bash
+   .\venv\Scripts\activate  # Windows
    pip install -r requirements.txt
    ```
 
-4. **Environment Variables:**
-   Create a `.env` file and add your keys:
+3. **Keys & Config:**
+   Crack open the `.env` file and drop in your API keys (don't share these!):
    ```env
-   OPENAI_API_KEY=your_key
-   PINECONE_API_KEY=your_key
-   PINECONE_INDEX_NAME=your_index
+   OPENAI_API_KEY=your_secret_key
+   PINECONE_API_KEY=your_secret_key
+   PINECONE_INDEX_NAME=documind-enterprise
    ```
 
-5. **Run the App:**
+4. **Fire it up:**
    ```bash
    python main.py
    ```
-   Access Swagger UI at `http://127.0.0.1:8000/docs`
+   Head over to `http://127.0.0.1:8000/docs` to start testing the endpoints.
+
+## 🧪 Testing the API
+- **Ingest:** Upload your PDF to `/ingest`.
+- **Ask:** Hit `/query` with your question and see the magic happen.
+
+*Happy Coding! 🚀*
