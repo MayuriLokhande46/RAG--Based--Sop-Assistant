@@ -5,16 +5,16 @@ Hey! This is a high-performance RAG (Retrieval-Augmented Generation) assistant b
 Instead of manual scrolling, just ask a question and let the AI do the heavy lifting. It fetches the exact page numbers so you can verify everything instantly.
 
 ##  What's inside?
-- Fast Parsing:** Uses `unstructured` to handle messy PDFs without breaking a sweat.
-- Smart Retrieval:** Uses Pinecone to find exactly what you need in seconds.
-- No BS Guardrails:** If the info isn't in your docs, the AI won't make stuff up. It'll just tell you it doesn't know.
-- Citations included:** Every answer comes with the page number it found it on.
+- Fast Parsing: Uses `unstructured` to handle messy PDFs without breaking a sweat.
+- Smart Retrieval: Uses Pinecone to find exactly what you need in seconds.
+- No BS Guardrails: If the info isn't in your docs, the AI won't make stuff up. It'll just tell you it doesn't know.
+- Citations included: Every answer comes with the page number it found it on.
 
 ##  Tech Stack
-- FastAPI** (for the heavy lifting API)
-- LangChain** (the glue holding it together)
-- OpenAI GPT-4o** (the brain)
-- Pinecone** (the memory)
+- FastAPI (for the heavy lifting API)
+- LangChain (the glue holding it together)
+- OpenAI GPT-4o (the brain)
+- Pinecone (the memory)
 
 ##  Getting Started
 
@@ -46,8 +46,8 @@ Instead of manual scrolling, just ask a question and let the AI do the heavy lif
    ```
    Head over to `http://127.0.0.1:8000/docs` to start testing the endpoints.
 
-## 🧪 Testing the API
-- **Ingest:** Upload your PDF to `/ingest`.
-- **Ask:** Hit `/query` with your question and see the magic happen.
+##  Testing the API
+- Ingest: Upload your PDF to `/ingest`.
+- Ask: Hit `/query` with your question and see the magic happen.
 
 
