@@ -59,8 +59,6 @@ async def ingest_document(file: UploadFile = File(...)):
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
-        with open("error_log.txt", "w") as f:
-            f.write(tb)
         raise HTTPException(status_code=500, detail=str(e))
     finally:
     
@@ -87,8 +85,6 @@ async def query_ai(request: QueryRequest):
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
-        with open("error_log.txt", "w") as f:
-            f.write(tb)
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
