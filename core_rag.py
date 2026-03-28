@@ -1,20 +1,46 @@
 import os
 from dotenv import load_dotenv
-from langchain_community.document_loaders import UnstructuredPDFLoader
+from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_pinecone import PineconeVectorStore
+from langchain_classic.chains import create_retrieval_chain
+from langchain_classic.chains.combine_documents import create_stuff_documents_chain
+from langchain_core.prompts import ChatPromptTemplate
 from pinecone import Pinecone, ServerlessSpec
 
 load_dotenv()
 
+EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
+DEFAULT_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "documind-enterprise-v2")
+DEFAULT_GOOGLE_MODEL = os.getenv("GOOGLE_MODEL_NAME", "gemini-2.0-flash")
+
+
+def _require_env(name: str) -> str:
+    value = os.getenv(name)
+    if not value:
+        raise ValueError(f"Missing required environment variable: {name}")
+    return value
+
+
+def _validate_config() -> None:
+    google_api_key = _require_env("GOOGLE_API_KEY")
+    pinecone_api_key = _require_env("PINECONE_API_KEY")
+
+    if google_api_key == pinecone_api_key:
+        raise ValueError(
+            "GOOGLE_API_KEY and PINECONE_API_KEY must be different values. "
+            "The current .env appears to reuse the same key for both services."
+        )
+
 def ingest_pdf(file_path: str):
-    
+    """
     Loads a PDF, chunks it, and returns the documents.
-    Uses 'unstructured' for robust parsing.
-    
+    Uses 'pypdf' for fast and lightweight parsing.
+    """
     print(f"Loading document: {file_path}")
-    loader = UnstructuredPDFLoader(file_path, mode="elements") # 'elements' gives us metadata like page numbers
+    loader = PyPDFLoader(file_path) 
     docs = loader.load()
     
 
@@ -29,17 +55,18 @@ def ingest_pdf(file_path: str):
     return final_docs
 
 def setup_vector_store(documents, index_name: str):
-    
+    """
     Initializes Pinecone and uploads documents.
-    
-    pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+    """
+    _validate_config()
+    pc = Pinecone(api_key=_require_env("PINECONE_API_KEY"))
     
 
     if index_name not in pc.list_indexes().names():
-        print(f"Creating index: {index_name}")
+        print(f"Index {index_name} not found. Creating new index with dimension 384...")
         pc.create_index(
             name=index_name,
-            dimension=1536, # OpenAI embedding dimension
+            dimension=384, # HuggingFace all-MiniLM-L6-v2 dimension
             metric="cosine",
             spec=ServerlessSpec(
                 cloud="aws",
@@ -47,7 +74,7 @@ def setup_vector_store(documents, index_name: str):
             )
         )
     
-    embeddings = OpenAIEmbeddings()
+    embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
     vectorstore = PineconeVectorStore.from_documents(
         documents=documents,
         embedding=embeddings,
@@ -56,19 +83,13 @@ def setup_vector_store(documents, index_name: str):
     print("Documents successfully indexed.")
     return vectorstore
 
-from langchain_openai import ChatOpenAI
-from langchain.chains import create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.prompts import ChatPromptTemplate
-
-# ... (previous code remains same)
-
-def get_retrieval_chain(index_name: str):
+def get_retrieval_chain(index_name: str = DEFAULT_INDEX_NAME):
     """
     Creates a retrieval chain that answers questions based on the vector store.
     Includes safety guardrails and citation instructions.
     """
-    embeddings = OpenAIEmbeddings()
+    _validate_config()
+    embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
     vectorstore = PineconeVectorStore(index_name=index_name, embedding=embeddings)
     
     system_prompt = (
@@ -88,10 +109,14 @@ def get_retrieval_chain(index_name: str):
         ]
     )
 
-    llm = ChatOpenAI(model="gpt-4o", temperature=0)
-    question_answer_chain = create_stuff_documents_chain(llm, prompt)
+    api_key = _require_env("GOOGLE_API_KEY")
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.5-flash",
+        google_api_key=api_key,
+        temperature=0
+    )
     
-    # Retrieval logic
+    question_answer_chain = create_stuff_documents_chain(llm, prompt)
     retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
     rag_chain = create_retrieval_chain(retriever, question_answer_chain)
     

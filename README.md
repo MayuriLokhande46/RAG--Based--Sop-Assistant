@@ -1,30 +1,33 @@
-# 🧠 DocuMind Enterprise - RAG SOP Assistant
+# DocuMind Enterprise - RAG SOP Assistant
 
-Hey! This is a high-performance RAG (Retrieval-Augmented Generation) assistant built specifically for digging through massive corporate SOPs (Standard Operating Procedures). 
+DocuMind is a Retrieval-Augmented Generation assistant for corporate SOPs. Upload a PDF, index it into Pinecone, and ask grounded questions against the document set through a FastAPI backend and a simple web UI.
 
-Instead of manual scrolling, just ask a question and let the AI do the heavy lifting. It fetches the exact page numbers so you can verify everything instantly.
+## Features
 
-## 🚀 What's inside?
-- **Fast Parsing:** Uses `unstructured` to handle messy PDFs without breaking a sweat.
-- **Smart Retrieval:** Uses Pinecone to find exactly what you need in seconds.
-- **No BS Guardrails:** If the info isn't in your docs, the AI won't make stuff up. It'll just tell you it doesn't know.
-- **Citations included:** Every answer comes with the page number it found it on.
+- PDF ingestion with `pypdf`
+- Chunking with LangChain text splitters
+- Embeddings via `sentence-transformers/all-MiniLM-L6-v2`
+- Vector search with Pinecone
+- Answer generation with Google Gemini
+- Guardrails that refuse to invent answers outside the indexed context
 
-## 🛠 Tech Stack
-- **FastAPI** (for the heavy lifting API)
-- **LangChain** (the glue holding it together)
-- **OpenAI GPT-4o** (the brain)
-- **Pinecone** (the memory)
+## Tech Stack
 
-## 🔧 Getting Started
+- FastAPI
+- LangChain integrations
+- Google Gemini via `langchain-google-genai`
+- Pinecone
+- Sentence Transformers
 
-1. **Clone it:**
+## Getting Started
+
+1. Clone it:
    ```bash
    git clone <your-repo-link>
    cd Rag-Sop-Assistant
    ```
 
-2. **Setup your environment:**
+2. Setup your environment:
    Make sure you've got Python installed, then:
    ```bash
    python -m venv venv
@@ -32,22 +35,23 @@ Instead of manual scrolling, just ask a question and let the AI do the heavy lif
    pip install -r requirements.txt
    ```
 
-3. **Keys & Config:**
-   Crack open the `.env` file and drop in your API keys (don't share these!):
+3. Keys & Config:
+   Create a `.env` file with real service credentials:
    ```env
-   OPENAI_API_KEY=your_secret_key
-   PINECONE_API_KEY=your_secret_key
-   PINECONE_INDEX_NAME=documind-enterprise
+   GOOGLE_API_KEY=your_google_api_key
+   PINECONE_API_KEY=your_pinecone_api_key
+   PINECONE_INDEX_NAME=documind-enterprise-v2
+   GOOGLE_MODEL_NAME=gemini-2.0-flash
    ```
+   `GOOGLE_API_KEY` and `PINECONE_API_KEY` must be different values.
 
-4. **Fire it up:**
+4. Fire it up:
    ```bash
-   python main.py
+   uvicorn main:app --reload
    ```
-   Head over to `http://127.0.0.1:8000/docs` to start testing the endpoints.
+   Open `http://127.0.0.1:8000` for the UI or `http://127.0.0.1:8000/docs` for the API docs.
 
-## 🧪 Testing the API
-- **Ingest:** Upload your PDF to `/ingest`.
-- **Ask:** Hit `/query` with your question and see the magic happen.
+## Testing the API
 
-*Happy Coding! 🚀*
+- Ingest a PDF with `POST /ingest`
+- Ask questions with `POST /query`
