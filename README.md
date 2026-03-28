@@ -4,6 +4,7 @@ DocuMind is a Retrieval-Augmented Generation assistant for corporate SOPs. Uploa
 
 ## Features
 
+<<<<<<< HEAD
 - PDF ingestion with `pypdf`
 - Chunking with LangChain text splitters
 - Embeddings via `sentence-transformers/all-MiniLM-L6-v2`
@@ -21,6 +22,22 @@ DocuMind is a Retrieval-Augmented Generation assistant for corporate SOPs. Uploa
 
 ## Getting Started
 
+=======
+##  What's inside?
+- Fast Parsing: Uses `unstructured` to handle messy PDFs without breaking a sweat.
+- Smart Retrieval: Uses Pinecone to find exactly what you need in seconds.
+- No BS Guardrails: If the info isn't in your docs, the AI won't make stuff up. It'll just tell you it doesn't know.
+- Citations included: Every answer comes with the page number it found it on.
+
+##  Tech Stack
+- FastAPI (for the heavy lifting API)
+- LangChain (the glue holding it together)
+- OpenAI GPT-4o (the brain)
+- Pinecone (the memory)
+
+##  Getting Started
+
+>>>>>>> 32072a67549ec5cf37a6ff4d1be28b8e70ac93c0
 1. Clone it:
    ```bash
    git clone <your-repo-link>
@@ -36,7 +53,11 @@ DocuMind is a Retrieval-Augmented Generation assistant for corporate SOPs. Uploa
    ```
 
 3. Keys & Config:
+<<<<<<< HEAD
    Create a `.env` file with real service credentials:
+=======
+   Crack open the `.env` file and drop in your API keys (don't share these!):
+>>>>>>> 32072a67549ec5cf37a6ff4d1be28b8e70ac93c0
    ```env
    GOOGLE_API_KEY=your_google_api_key
    PINECONE_API_KEY=your_pinecone_api_key
@@ -51,7 +72,15 @@ DocuMind is a Retrieval-Augmented Generation assistant for corporate SOPs. Uploa
    ```
    Open `http://127.0.0.1:8000` for the UI or `http://127.0.0.1:8000/docs` for the API docs.
 
+<<<<<<< HEAD
 ## Testing the API
 
 - Ingest a PDF with `POST /ingest`
 - Ask questions with `POST /query`
+=======
+##  Testing the API
+- Ingest: Upload your PDF to `/ingest`.
+- Ask: Hit `/query` with your question and see the magic happen.
+
+
+>>>>>>> 32072a67549ec5cf37a6ff4d1be28b8e70ac93c0
