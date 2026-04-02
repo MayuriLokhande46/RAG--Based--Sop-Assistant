@@ -1,86 +1,60 @@
 # DocuMind Enterprise - RAG SOP Assistant
 
-DocuMind is a Retrieval-Augmented Generation assistant for corporate SOPs. Upload a PDF, index it into Pinecone, and ask grounded questions against the document set through a FastAPI backend and a simple web UI.
+DocuMind is a Retrieval-Augmented Generation (RAG) assistant designed for corporate Standard Operating Procedures (SOPs). Upload a PDF, index it into a high-performance vector store, and ask grounded questions through an intuitive web dashboard.
 
-## Features
+## Key Features
 
-<<<<<<< HEAD
-- PDF ingestion with `pypdf`
-- Chunking with LangChain text splitters
-- Embeddings via `sentence-transformers/all-MiniLM-L6-v2`
-- Vector search with Pinecone
-- Answer generation with Google Gemini
-- Guardrails that refuse to invent answers outside the indexed context
+- **Accurate PDF Ingestion**: High-quality document parsing with `PyPDF`.
+- **Intelligent Chunking**: optimized text splitting with LangChain for context retention.
+- **AI-Powered Retrieval**: Fast, semantic search powered by Pinecone and HuggingFace embeddings.
+- **Reliable Answer Generation**: Responses grounded in corporate context using Google Gemini models.
+- **Strict Guardrails**: Refuses to hallucinate; if the answer isn't in your docs, it'll tell you.
+- **Integrated History**: Keeps track of your previous queries and answers per user session.
 
 ## Tech Stack
 
-- FastAPI
-- LangChain integrations
-- Google Gemini via `langchain-google-genai`
-- Pinecone
-- Sentence Transformers
+- **Backend**: FastAPI
+- **LLM**: Google Gemini via `langchain-google-genai`
+- **Vector DB**: Pinecone
+- **Embeddings**: Sentence Transformers (`all-MiniLM-L6-v2`)
+- **Frontend**: Glassmorphic UI with Vanilla CSS & Modern JS
+- **Database**: SQLite (SQLAlchemy) for user management and chat history
 
 ## Getting Started
 
-=======
-##  What's inside?
-- Fast Parsing: Uses `unstructured` to handle messy PDFs without breaking a sweat.
-- Smart Retrieval: Uses Pinecone to find exactly what you need in seconds.
-- No BS Guardrails: If the info isn't in your docs, the AI won't make stuff up. It'll just tell you it doesn't know.
-- Citations included: Every answer comes with the page number it found it on.
-
-##  Tech Stack
-- FastAPI (for the heavy lifting API)
-- LangChain (the glue holding it together)
-- OpenAI GPT-4o (the brain)
-- Pinecone (the memory)
-
-##  Getting Started
-
->>>>>>> 32072a67549ec5cf37a6ff4d1be28b8e70ac93c0
-1. Clone it:
+1. **Clone the repository**:
    ```bash
    git clone <your-repo-link>
    cd Rag-Sop-Assistant
    ```
 
-2. Setup your environment:
-   Make sure you've got Python installed, then:
+2. **Set up the environment**:
+   Create a virtual environment and install dependencies:
    ```bash
    python -m venv venv
    .\venv\Scripts\activate  # Windows
    pip install -r requirements.txt
    ```
 
-3. Keys & Config:
-<<<<<<< HEAD
-   Create a `.env` file with real service credentials:
-=======
-   Crack open the `.env` file and drop in your API keys (don't share these!):
->>>>>>> 32072a67549ec5cf37a6ff4d1be28b8e70ac93c0
+3. **Configure API Keys**:
+   Create a `.env` file in the root directory:
    ```env
    GOOGLE_API_KEY=your_google_api_key
    PINECONE_API_KEY=your_pinecone_api_key
    PINECONE_INDEX_NAME=documind-enterprise-v2
-   GOOGLE_MODEL_NAME=gemini-2.0-flash
+   GOOGLE_MODEL_NAME=models/gemini-1.5-flash
    ```
-   `GOOGLE_API_KEY` and `PINECONE_API_KEY` must be different values.
+   *Tip: Ensure standard Pinecone serverless specs are available in your region.*
 
-4. Fire it up:
+4. **Run the Application**:
    ```bash
    uvicorn main:app --reload
    ```
-   Open `http://127.0.0.1:8000` for the UI or `http://127.0.0.1:8000/docs` for the API docs.
+   Access the dashboard at `http://127.0.0.1:8000`.
 
-<<<<<<< HEAD
 ## Testing the API
 
-- Ingest a PDF with `POST /ingest`
-- Ask questions with `POST /query`
-=======
-##  Testing the API
-- Ingest: Upload your PDF to `/ingest`.
-- Ask: Hit `/query` with your question and see the magic happen.
+- **Ingest**: Use the UI or POST to `/ingest` with a PDF file.
+- **Query**: Use the dashboard or POST to `/query` with your question.
+- **Auth**: Secured via OAuth2 JWT tokens.
 
-
->>>>>>> 32072a67549ec5cf37a6ff4d1be28b8e70ac93c0

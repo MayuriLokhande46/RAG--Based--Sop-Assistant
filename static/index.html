@@ -3,365 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DocuMind Enterprise</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-color: #0b0f19;
-            --glass-bg: rgba(20, 25, 35, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --primary-accent: #3b82f6;
-            --primary-hover: #2563eb;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --user-msg: rgba(59, 130, 246, 0.2);
-            --bot-msg: rgba(30, 41, 59, 0.6);
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: radial-gradient(circle at top right, #1e293b, var(--bg-color));
-            color: var(--text-main);
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        .app-container {
-            width: 95%;
-            max-width: 1000px;
-            height: 90vh;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .header {
-            padding: 24px 32px;
-            border-bottom: 1px solid var(--glass-border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(11, 15, 25, 0.4);
-        }
-
-        .header h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            letter-spacing: -0.02em;
-            background: linear-gradient(to right, #60a5fa, #a78bfa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .upload-section {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .custom-file-upload {
-            border: 1px solid var(--glass-border);
-            display: inline-block;
-            padding: 8px 16px;
-            cursor: pointer;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.05);
-            font-size: 0.9rem;
-            transition: all 0.2s ease;
-        }
-
-        .custom-file-upload:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        input[type="file"] {
-            display: none;
-        }
-
-        .btn {
-            background: var(--primary-accent);
-            color: white;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 8px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 0.9rem;
-        }
-
-        .btn:hover {
-            background: var(--primary-hover);
-            transform: translateY(-1px);
-        }
-
-        .btn:disabled {
-            background: var(--text-muted);
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .chat-area {
-            flex: 1;
-            padding: 32px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-
-        .message {
-            max-width: 80%;
-            padding: 16px 20px;
-            border-radius: 16px;
-            line-height: 1.6;
-            animation: fadeIn 0.3s ease-out forwards;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .message.user {
-            align-self: flex-end;
-            background: var(--user-msg);
-            border-bottom-right-radius: 4px;
-            border: 1px solid rgba(59, 130, 246, 0.3);
-        }
-
-        .message.bot {
-            align-self: flex-start;
-            background: var(--bot-msg);
-            border-bottom-left-radius: 4px;
-            border: 1px solid var(--glass-border);
-        }
-
-        .input-area {
-            padding: 24px 32px;
-            background: rgba(11, 15, 25, 0.6);
-            border-top: 1px solid var(--glass-border);
-            display: flex;
-            gap: 16px;
-        }
-
-        .input-area input[type="text"] {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--glass-border);
-            padding: 16px 24px;
-            border-radius: 12px;
-            color: white;
-            font-size: 1rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .input-area input[type="text"]:focus {
-            border-color: var(--primary-accent);
-        }
-
-        .input-area button {
-            padding: 0 32px;
-            border-radius: 12px;
-            font-size: 1rem;
-            height: auto;
-        }
-
-        .status-text {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-left: 12px;
-        }
-
-        /* Loading Dots */
-        .typing-indicator {
-            display: flex;
-            gap: 4px;
-            padding: 4px 8px;
-        }
-        .typing-indicator span {
-            width: 8px;
-            height: 8px;
-            background: var(--text-muted);
-            border-radius: 50%;
-            animation: bounce 1.4s infinite ease-in-out both;
-        }
-        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
-        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
-        
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
-        }
-    </style>
+    <meta name="description" content="DocuMind Enterprise - Advanced RAG SOP Assistant for corporate compliance and training.">
+    <title>DocuMind Enterprise | RAG SOP Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
-<div class="app-container">
-    <div class="header">
-        <h1>DocuMind Enterprise</h1>
-        <div class="upload-section">
-            <span id="uploadStatus" class="status-text">No document loaded.</span>
-            <label class="custom-file-upload">
-                <input type="file" id="pdfFile" accept=".pdf" />
-                Select PDF
-            </label>
-            <button class="btn" id="uploadBtn" onclick="uploadDocument()">Upload & Index</button>
+    <!-- AUTHENTICATION VIEW -->
+    <div id="authView" role="dialog" aria-labelledby="authTitle">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            </div>
+            <h2 id="authTitle">DocuMind Login</h2>
+            <div id="authError" aria-live="polite" style="color: var(--accent-rose); margin-bottom: 24px; font-size: 0.95rem; font-weight: 500;"></div>
+            <form id="authForm" autocomplete="off" onsubmit="event.preventDefault(); handleAuth();">
+                <div class="input-container">
+                    <input type="text" id="username" autocomplete="off" placeholder="Username" aria-label="Username" required pattern="[A-Za-z]{3,20}" title="Letters only, 3-20 characters">
+                    <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </div>
+                <div class="input-container">
+                    <input type="password" id="password" autocomplete="new-password" placeholder="Password" aria-label="Password" required minlength="6">
+                    <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                </div>
+                <button type="submit" class="btn" id="authBtn" style="width:100%; padding:18px; margin-top:10px;">Login Into Workspace</button>
+            </form>
+            <div class="auth-toggle" onclick="toggleAuthMode()" tabindex="0" role="button" aria-label="Toggle between login and signup">New account? Create Workspace Access</div>
         </div>
     </div>
 
-    <div class="chat-area" id="chatArea">
-        <div class="message bot">
-            Hello! I am DocuMind Enterprise Assistant. Please upload an SOP document first, and then you can ask me questions about it!
+    <!-- MAIN APPLICATION VIEW -->
+    <div id="appView">
+        <nav class="sidebar" aria-label="Chat History and Profile">
+            <button class="new-chat-btn" onclick="newChat()" aria-label="Start new session">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                New Session
+            </button>
+            <div class="history-list" id="historyList" role="list" aria-label="Recent queries">
+                <!-- History items injected here -->
+            </div>
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar" id="userInitial" aria-hidden="true">U</div>
+                    <div class="user-info">
+                        <div id="userNameDisp" style="font-weight:700; font-size: 0.95rem; letter-spacing: -0.02em;">User</div>
+                        <button class="logout-btn" onclick="logout()" aria-label="Sign out">
+                            <svg class="icon" style="width:12px; height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                            Sign Out
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="top-nav">
+                <div class="brand">
+                    <h1 id="activeDocName">DocuMind Enterprise</h1>
+                </div>
+                <div class="upload-tools">
+                    <span id="uploadStatus" aria-live="status">Ready</span>
+                    <button class="btn status-highlight-btn" id="statusHighlightBtn" onclick="highlightReady()" aria-label="Ready highlight" style="display:none; background: var(--accent-emerald); gap: 6px;">
+                        <svg class="icon" style="width:16px; height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+                        Ready to Go!
+                    </button>
+                    <input type="file" id="pdfFile" accept=".pdf,.txt" style="display:none" onchange="uploadDocument()" aria-hidden="true">
+                    <button class="btn" onclick="document.getElementById('pdfFile').click()" aria-label="Upload document">
+                        <svg class="icon" style="margin-right:8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        Load SOP
+                    </button>
+                </div>
+            </header>
+
+            <section class="chat-feed" id="chatArea" aria-label="Conversation area" role="log">
+                <!-- Messages injected here -->
+                <div class="message-container">
+                    <div class="message bot">
+                        <div class="message-avatar" aria-hidden="true">AI</div>
+                        <div class="message-text">Hello! I am DocuMind. Upload an SOP document to begin chatting.</div>
+                    </div>
+                </div>
+            </section>
+
+            <footer class="bottom-shelf">
+                <div class="input-box" onclick="document.getElementById('questionInput').focus()">
+                    <textarea id="questionInput" placeholder="Ask anything about your SOPs..." 
+                               rows="1" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"
+                               onkeydown="if(event.key==='Enter' && !event.shiftKey) { event.preventDefault(); askQuestion(); }"
+                               aria-label="Message DocuMind"></textarea>
+                    <button class="send-pill" id="sendBtn" onclick="askQuestion()" aria-label="Send message">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                        </svg>
+                    </button>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <!-- SHARE MODAL -->
+    <div id="shareModal" class="share-modal" style="display: none;">
+        <div class="share-modal-content">
+            <div class="share-modal-header">
+                <h3>Share This Chat</h3>
+                <button class="share-modal-close" onclick="document.getElementById('shareModal').style.display = 'none';">&times;</button>
+            </div>
+            <div class="share-modal-body">
+                <div class="share-section">
+                    <label>Share Link:</label>
+                    <div class="share-url-container">
+                        <input type="text" id="shareUrlInput" readonly class="share-url-input">
+                        <button class="btn-icon-copy" onclick="copyToClipboard('shareUrlInput')" title="Copy link">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="share-section">
+                    <label>Share Text:</label>
+                    <textarea id="shareTextInput" class="share-text-input" readonly></textarea>
+                    <button class="btn" onclick="copyToClipboard('shareTextInput')" style="width: 100%; margin-top: 8px;">
+                        <svg class="icon" style="width:14px; height:14px; margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                        Copy Text
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="input-area">
-        <input type="text" id="questionInput" placeholder="Ask a question about the document..." onkeypress="handleKeyPress(event)" disabled />
-        <button class="btn" id="sendBtn" onclick="askQuestion()" disabled>Send</button>
-    </div>
-</div>
-
-<script>
-    const chatArea = document.getElementById('chatArea');
-    const uploadStatus = document.getElementById('uploadStatus');
-    const questionInput = document.getElementById('questionInput');
-    const sendBtn = document.getElementById('sendBtn');
-    const uploadBtn = document.getElementById('uploadBtn');
-
-    function appendMessage(text, isUser = false) {
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `message ${isUser ? 'user' : 'bot'}`;
-        msgDiv.textContent = text;
-        chatArea.appendChild(msgDiv);
-        chatArea.scrollTop = chatArea.scrollHeight;
-    }
-
-    function showTypingIndicator() {
-        const msgDiv = document.createElement('div');
-        msgDiv.className = 'message bot';
-        msgDiv.id = 'typingIndicator';
-        msgDiv.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
-        chatArea.appendChild(msgDiv);
-        chatArea.scrollTop = chatArea.scrollHeight;
-    }
-
-    function removeTypingIndicator() {
-        const indicator = document.getElementById('typingIndicator');
-        if (indicator) indicator.remove();
-    }
-
-    async function uploadDocument() {
-        const fileInput = document.getElementById('pdfFile');
-        const file = fileInput.files[0];
-        
-        if (!file) {
-            alert('Please select a PDF file first.');
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('file', file);
-
-        uploadStatus.textContent = 'Uploading and indexing...';
-        uploadBtn.disabled = true;
-
-        try {
-            const response = await fetch('/ingest', {
-                method: 'POST',
-                body: formData
-            });
-
-            const rawText = await response.text();
-            let result = {};
-
-            try {
-                result = rawText ? JSON.parse(rawText) : {};
-            } catch {
-                result = { detail: rawText || 'Unexpected server response' };
-            }
-            
-            if (response.ok) {
-                uploadStatus.textContent = 'Document indexed successfully!';
-                uploadStatus.style.color = '#4ade80';
-                questionInput.disabled = false;
-                sendBtn.disabled = false;
-                appendMessage(`Successfully loaded: ${file.name}. What would you like to know?`);
-            } else {
-                uploadStatus.textContent = 'Error during upload.';
-                uploadStatus.style.color = '#ef4444';
-                alert(result.detail || 'Upload failed');
-            }
-        } catch (error) {
-            uploadStatus.textContent = 'Connection error.';
-            uploadStatus.style.color = '#ef4444';
-            alert('Server connection failed. Make sure uvicorn is running on http://127.0.0.1:8000 and then try again.');
-            console.error('Error:', error);
-        } finally {
-            uploadBtn.disabled = false;
-        }
-    }
-
-    function handleKeyPress(e) {
-        if (e.key === 'Enter') {
-            askQuestion();
-        }
-    }
-
-    async function askQuestion() {
-        const text = questionInput.value.trim();
-        if (!text) return;
-
-        appendMessage(text, true);
-        questionInput.value = '';
-        questionInput.disabled = true;
-        sendBtn.disabled = true;
-
-        showTypingIndicator();
-
-        try {
-            const response = await fetch('/query', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ question: text })
-            });
-
-            const result = await response.json();
-            removeTypingIndicator();
-
-            if (response.ok) {
-                appendMessage(result.answer);
-            } else {
-                appendMessage('Sorry, I encountered an error processing your request.');
-            }
-        } catch (error) {
-            removeTypingIndicator();
-            appendMessage('Network connection error.');
-            console.error('Error:', error);
-        } finally {
-            questionInput.disabled = false;
-            sendBtn.disabled = false;
-            questionInput.focus();
-        }
-    }
-</script>
+    <script src="/static/app.js"></script>
 </body>
 </html>

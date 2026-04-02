@@ -11,7 +11,7 @@ def test_llm():
     # Try 1: v1 with gemini-1.5-flash
     print("\n--- Try 1: version='v1', model='gemini-1.5-flash' ---")
     try:
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key, version="v1")
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key, model_kwargs={"version": "v1"})
         res = llm.invoke("Hi")
         print(f"SUCCESS: {res.content}")
     except Exception as e:

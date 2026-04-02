@@ -12,8 +12,7 @@ def test_llm_rest():
         llm = ChatGoogleGenerativeAI(
             model="gemini-1.5-flash", 
             google_api_key=api_key, 
-            version="v1",
-            transport="rest"
+            model_kwargs={"version": "v1", "transport": "rest"}
         )
         res = llm.invoke("Hi")
         print(f"SUCCESS: {res.content}")

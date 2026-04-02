@@ -1,21 +1,42 @@
 import os
+import time
+from typing import List, Optional
 from dotenv import load_dotenv
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_pinecone import PineconeVectorStore
-from langchain_classic.chains import create_retrieval_chain
-from langchain_classic.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.prompts import ChatPromptTemplate
-from pinecone import Pinecone, ServerlessSpec
+
+# Document is a light metadata class, safe to import at top level
+from langchain_core.documents import Document
 
 load_dotenv()
 
+print("--- CORE_RAG: Version 3.6 (Stable History) Initialized ---")
+
 EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
 DEFAULT_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "documind-enterprise-v2")
-DEFAULT_GOOGLE_MODEL = os.getenv("GOOGLE_MODEL_NAME", "gemini-2.0-flash")
+# Use GOOGLE_MODEL_NAME from .env
+DEFAULT_GOOGLE_MODEL = os.getenv("GOOGLE_MODEL_NAME", "gemini-1.5-flash")
 
+# Global singletons to avoid re-loading on every request
+_embeddings_cache = None
+_chain_cache = {}  # Cache chains per namespace
+
+def invalidate_chain_cache(index_name: Optional[str] = None, namespace: Optional[str] = None) -> None:
+    """Invalidates the chain cache."""
+    global _chain_cache
+    if index_name and namespace:
+        key = f"{index_name}:{namespace}"
+        _chain_cache.pop(key, None)
+        print(f"Chain cache invalidated for key: {key}")
+    else:
+        _chain_cache.clear()
+        print("All chain caches cleared.")
+
+def _get_embeddings():
+    global _embeddings_cache
+    if _embeddings_cache is None:
+        print("Initializing HuggingFace Embeddings (first time)...")
+        from langchain_huggingface import HuggingFaceEmbeddings
+        _embeddings_cache = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
+    return _embeddings_cache
 
 def _require_env(name: str) -> str:
     value = os.getenv(name)
@@ -23,103 +44,104 @@ def _require_env(name: str) -> str:
         raise ValueError(f"Missing required environment variable: {name}")
     return value
 
-
 def _validate_config() -> None:
     google_api_key = _require_env("GOOGLE_API_KEY")
     pinecone_api_key = _require_env("PINECONE_API_KEY")
-
     if google_api_key == pinecone_api_key:
-        raise ValueError(
-            "GOOGLE_API_KEY and PINECONE_API_KEY must be different values. "
-            "The current .env appears to reuse the same key for both services."
-        )
+        raise ValueError("GOOGLE_API_KEY and PINECONE_API_KEY must be different.")
 
-def ingest_pdf(file_path: str):
-    """
-    Loads a PDF, chunks it, and returns the documents.
-    Uses 'pypdf' for fast and lightweight parsing.
-    """
+def ingest_pdf(file_path: str) -> List[Document]:
+    """Loads a file (PDF or TXT), chunks it, and returns the documents."""
+    from langchain_community.document_loaders import PyPDFLoader, TextLoader
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+    
     print(f"Loading document: {file_path}")
-    loader = PyPDFLoader(file_path) 
-    docs = loader.load()
-    
+    if file_path.lower().endswith(".pdf"):
+        loader = PyPDFLoader(file_path)
+        docs = loader.load()
+    elif file_path.lower().endswith(".txt"):
+        loader = TextLoader(file_path, encoding='utf-8')
+        docs = loader.load()
+    else:
+        raise ValueError("Unsupported file type")
 
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200,
-        add_start_index=True
-    )
-    
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
     final_docs = text_splitter.split_documents(docs)
+    for doc in final_docs:
+        if "page" not in doc.metadata: doc.metadata["page"] = 1
     print(f"Split into {len(final_docs)} chunks.")
     return final_docs
 
-def setup_vector_store(documents, index_name: str):
-    """
-    Initializes Pinecone and uploads documents.
-    """
+def setup_vector_store(documents: List[Optional['Document']], index_name: str, namespace: Optional[str] = None):
+    """Initializes Pinecone and uploads documents."""
+    from pinecone import Pinecone, ServerlessSpec
+    from langchain_pinecone import PineconeVectorStore
     _validate_config()
     pc = Pinecone(api_key=_require_env("PINECONE_API_KEY"))
     
-
     if index_name not in pc.list_indexes().names():
-        print(f"Index {index_name} not found. Creating new index with dimension 384...")
         pc.create_index(
             name=index_name,
-            dimension=384, # HuggingFace all-MiniLM-L6-v2 dimension
+            dimension=384,
             metric="cosine",
-            spec=ServerlessSpec(
-                cloud="aws",
-                region="us-east-1"
-            )
+            spec=ServerlessSpec(cloud="aws", region="us-east-1")
         )
     
-    embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
     vectorstore = PineconeVectorStore.from_documents(
         documents=documents,
-        embedding=embeddings,
-        index_name=index_name
+        embedding=_get_embeddings(),
+        index_name=index_name,
+        namespace=namespace
     )
     print("Documents successfully indexed.")
     return vectorstore
 
-def get_retrieval_chain(index_name: str = DEFAULT_INDEX_NAME):
-    """
-    Creates a retrieval chain that answers questions based on the vector store.
-    Includes safety guardrails and citation instructions.
-    """
-    _validate_config()
-    embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
-    vectorstore = PineconeVectorStore(index_name=index_name, embedding=embeddings)
+def get_retrieval_chain(index_name: str = DEFAULT_INDEX_NAME, namespace: Optional[str] = None):
+    """Creates a cached retrieval chain with conversational history support."""
+    global _chain_cache
+    from langchain_google_genai import ChatGoogleGenerativeAI
+    from langchain_pinecone import PineconeVectorStore
+    from langchain_classic.chains import create_retrieval_chain
+    from langchain_classic.chains.combine_documents import create_stuff_documents_chain
+    from langchain_core.prompts import ChatPromptTemplate
     
+    cache_key = f"{index_name}:{namespace}"
+    if cache_key in _chain_cache:
+        return _chain_cache[cache_key]
+
+    _validate_config()
+    vectorstore = PineconeVectorStore(index_name=index_name, embedding=_get_embeddings(), namespace=namespace)
+    api_key = _require_env("GOOGLE_API_KEY")
+    
+    # Typos handling
+    model_name = DEFAULT_GOOGLE_MODEL.strip()
+    if model_name.startswith("ggemini"): model_name = model_name.replace("ggemini", "gemini")
+    elif model_name.startswith("emini"): model_name = "gemini-" + model_name
+    
+    primary_llm = ChatGoogleGenerativeAI(model=model_name, google_api_key=api_key, temperature=0, max_retries=5, api_version="v1")
+    fallback_llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro", google_api_key=api_key, temperature=0, max_retries=5, api_version="v1")
+    llm = primary_llm.with_fallbacks([fallback_llm])
+    
+    # Manual History Prompt (Compatible with all versions)
     system_prompt = (
         "You are an expert Corporate SOP Assistant. "
-        "Use the provided context to answer the user's question. "
-        "If the answer is not in the context, strictly say: 'I am sorry, this information is not available in the corporate documents provided.' "
-        "Do not invent any facts. "
-        "Every claim must be cited with the Page Number if available in metadata. "
+        "Use the provided context and history to answer the question. "
+        "If context is missing, say it's not in the documents. "
         "\n\n"
-        "{context}"
+        "CONVERSATION HISTORY:\n{chat_history}\n\n"
+        "CONTEXT:\n{context}"
     )
 
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", system_prompt),
-            ("human", "{input}"),
-        ]
-    )
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", system_prompt),
+        ("human", "{input}"),
+    ])
 
-    api_key = _require_env("GOOGLE_API_KEY")
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
-        google_api_key=api_key,
-        temperature=0
-    )
-    
     question_answer_chain = create_stuff_documents_chain(llm, prompt)
     retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
     rag_chain = create_retrieval_chain(retriever, question_answer_chain)
     
+    _chain_cache[cache_key] = rag_chain
     return rag_chain
 
 if __name__ == "__main__":

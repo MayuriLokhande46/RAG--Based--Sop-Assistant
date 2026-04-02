@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: documind-enterprise
+    runtime: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
+    plan: free
+    envVars:
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: PINECONE_API_KEY
+        sync: false
+      - key: PINECONE_INDEX_NAME
+        value: documind-enterprise-v2
+      - key: GOOGLE_MODEL_NAME
+        value: gemini-2.5-flash
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: PYTHON_VERSION
+        value: "3.11.0"
