@@ -68,6 +68,10 @@
                         <svg class="icon" style="width:16px; height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
                         Ready to Go!
                     </button>
+                    <button class="btn" id="shareSessionBtn" onclick="shareEntireSession()" aria-label="Share entire session" style="display:none; background: var(--accent-blue); gap: 6px;">
+                        <svg class="icon" style="width:16px; height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                        Share Session
+                    </button>
                     <input type="file" id="pdfFile" accept=".pdf,.txt" style="display:none" onchange="uploadDocument()" aria-hidden="true">
                     <button class="btn" onclick="document.getElementById('pdfFile').click()" aria-label="Upload document">
                         <svg class="icon" style="margin-right:8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>

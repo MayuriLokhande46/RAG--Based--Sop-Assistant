@@ -177,18 +177,7 @@ function appendMessage(text, isUser = false, sources = null) {
     }
 
     let buttonHtml = '';
-    if (!isUser) {
-        const messageId = 'msg_' + Date.now() + Math.random().toString(36).substr(2, 9);
-        // Store text in a data attribute instead of onclick to avoid escaping issues
-        buttonHtml = `
-            <div class="message-actions">
-                <button class="btn-message-action" data-share-id="${messageId}" data-share-text="true" onclick="shareMessageHandler(this)" title="Share this answer">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-                    Share
-                </button>
-            </div>
-        `;
-    }
+    // Share button removed - use Share Session button in header instead
 
     wrapper.innerHTML = `
         <div class="message ${isUser ? 'user' : 'bot'}">
@@ -196,7 +185,6 @@ function appendMessage(text, isUser = false, sources = null) {
             <div class="message-content">
                 <div class="message-text">${text}</div>
                 ${sourcesHtml}
-                ${buttonHtml}
             </div>
         </div>
     `;
@@ -216,6 +204,7 @@ function newChat() {
     statusEl.innerText = "Ready";
     statusEl.className = "status-ready";
     document.getElementById('statusHighlightBtn').style.display = "inline-flex";
+    document.getElementById('shareSessionBtn').style.display = 'none';
 }
 
 async function loadHistory() {
@@ -258,6 +247,7 @@ async function uploadDocument() {
             statusEl.className = "status-ready";
             document.getElementById('statusHighlightBtn').style.display = "inline-flex";
             document.getElementById('activeDocName').innerText = f.name;
+            document.getElementById('shareSessionBtn').style.display = 'inline-flex';
             appendMessage(`Successfully indexed: ${f.name}. You can now start asking questions.`, false);
         } else {
             const err = await res.json();
@@ -425,29 +415,37 @@ function highlightReady() {
 }
 
 // --- SHARE FUNCTIONS ---
-let lastQuestion = '';
-let lastSources = [];
-
-function shareMessageHandler(button) {
-    // Get the message text from the parent message div
-    const messageDiv = button.closest('.message-content');
-    const answerText = messageDiv.querySelector('.message-text').textContent;
-    shareMessage(answerText);
-}
-
-async function shareMessage(answerText) {
-    const modal = document.getElementById('shareModal');
+async function shareEntireSession() {
     const docName = document.getElementById('activeDocName').innerText || 'SOP';
+    const chatArea = document.getElementById('chatArea');
+    const messages = chatArea.querySelectorAll('.message-container');
+    
+    // Extract all Q&A pairs from the chat
+    const sessionMessages = [];
+    messages.forEach((msgContainer, index) => {
+        const messageDiv = msgContainer.querySelector('.message');
+        const isUser = messageDiv.classList.contains('user');
+        const text = msgContainer.querySelector('.message-text').textContent;
+        sessionMessages.push({
+            role: isUser ? 'user' : 'assistant',
+            content: text
+        });
+    });
+
+    if (sessionMessages.length === 0) {
+        alert('No messages to share yet!');
+        return;
+    }
+
+    const modal = document.getElementById('shareModal');
     
     try {
-        // Call backend to create share link
-        const response = await authFetch('/share-chat', {
+        // Call backend to create session share link
+        const response = await authFetch('/share-session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                question: lastQuestion || 'DocuMind Answer',
-                answer: answerText,
-                sources: lastSources.join(','),
+                session_messages: sessionMessages,
                 document_name: docName
             })
         });
@@ -457,7 +455,7 @@ async function shareMessage(answerText) {
             const fullUrl = window.location.origin + data.share_url;
             
             document.getElementById('shareUrlInput').value = fullUrl;
-            document.getElementById('shareTextInput').value = data.copy_text;
+            document.getElementById('shareTextInput').value = `Share this DocuMind session: ${fullUrl}`;
             modal.style.display = 'flex';
             modal.style.animation = 'modalPop 0.3s ease-out';
         } else {
@@ -465,7 +463,7 @@ async function shareMessage(answerText) {
         }
     } catch (e) {
         console.error('Share error:', e);
-        alert('Error sharing: ' + e.message);
+        alert('Error sharing session: ' + e.message);
     }
 }
 

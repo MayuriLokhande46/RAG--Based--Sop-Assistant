@@ -96,7 +96,6 @@
     </style>
 
     <script>
-        const urlParams = new URLSearchParams(window.location.pathname);
         const shareId = window.location.pathname.split('/').pop();
 
         async function loadSharedChat() {
@@ -109,11 +108,98 @@
                 }
 
                 const data = await response.json();
-                displayChat(data);
+                
+                // Check if this is a session (answer is JSON) or single Q&A
+                try {
+                    const sessionData = JSON.parse(data.answer);
+                    if (sessionData.messages && Array.isArray(sessionData.messages)) {
+                        displaySession(sessionData);
+                    } else {
+                        displayChat(data);
+                    }
+                } catch (e) {
+                    // Not JSON, treat as single Q&A
+                    displayChat(data);
+                }
             } catch (error) {
                 console.error('Error loading shared chat:', error);
                 showError('Failed to load shared chat. Please try again.');
             }
+        }
+
+        function displaySession(sessionData) {
+            // Hide loading, show content
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('chatContent').style.display = 'block';
+
+            // Update header
+            document.getElementById('docName').textContent = `Session: ${sessionData.document_name || 'SOP'}`;
+
+            // Display conversation
+            const conversationDiv = document.getElementById('questionText').parentElement.parentElement.parentElement;
+            conversationDiv.style.marginBottom = '0';
+            
+            const chatDiv = document.createElement('div');
+            chatDiv.style.marginBottom = '32px';
+            
+            sessionData.messages.forEach(msg => {
+                const isUser = msg.role === 'user';
+                const msgHtml = `
+                    <div style="margin-bottom: 16px; display: flex; gap: 16px;">
+                        <div style="width: 32px; min-width: 32px; height: 32px; background: ${isUser ? '#3b82f6' : '#10b981'}; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.9rem;">${isUser ? 'U' : 'AI'}</div>
+                        <div style="background: ${isUser ? 'rgba(59, 130, 246, 0.08)' : 'rgba(16, 185, 129, 0.08)'}; border: 1px solid ${isUser ? 'rgba(59, 130, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)'}; border-radius: 12px; padding: 12px 16px; flex: 1; color: #f8fafc; line-height: 1.6; word-break: break-word;">${escapeHtml(msg.content)}</div>
+                    </div>
+                `;
+                chatDiv.innerHTML += msgHtml;
+            });
+            
+            conversationDiv.replaceChild(chatDiv, conversationDiv.firstChild.nextSibling);
+
+            // Metadata
+            document.getElementById('metaDoc').textContent = sessionData.document_name || 'SOP';
+            document.getElementById('metaUser').textContent = sessionData.created_by || 'DocuMind';
+            document.getElementById('metaDate').textContent = new Date(sessionData.created_at).toLocaleDateString();
+
+            // Hide individual copy buttons, show select/copy all
+            document.querySelector('button[onclick="copyQuestion()"]').style.display = 'none';
+            document.querySelector('button[onclick="copyAnswer()"]').style.display = 'none';
+            
+            // Add "Copy All" button
+            const copyAllBtn = document.createElement('button');
+            copyAllBtn.className = 'btn';
+            copyAllBtn.style.background = '#f59e0b';
+            copyAllBtn.style.gap = '6px';
+            copyAllBtn.style.display = 'inline-flex';
+            copyAllBtn.style.alignItems = 'center';
+            copyAllBtn.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                Copy All
+            `;
+            copyAllBtn.onclick = () => copyAllMessages(sessionData.messages);
+            document.querySelector('button[onclick="copyAnswer()"]').parentElement.insertBefore(copyAllBtn, document.querySelector('button[onclick="copyAnswer()"]'));
+        }
+
+        function copyAllMessages(messages) {
+            let text = '';
+            messages.forEach((msg, idx) => {
+                text += `${msg.role === 'user' ? 'You' : 'DocuMind'}: ${msg.content}\n\n`;
+            });
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = event.target.closest('button');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✓ Copied!';
+                btn.style.background = '#10b981';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.background = '#f59e0b';
+                }, 2000);
+            });
+        }
+
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, m => map[m]);
         }
 
         function displayChat(data) {

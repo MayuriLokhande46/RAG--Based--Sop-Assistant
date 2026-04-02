@@ -65,6 +65,10 @@ class ShareChatRequest(BaseModel):
     sources: str = ""
     document_name: str = "SOP"
 
+class ShareSessionRequest(BaseModel):
+    session_messages: list = []  # List of {role: 'user'|'assistant', content: str}
+    document_name: str = "SOP"
+
 class UserCreate(BaseModel):
     username: str = Field(..., min_length=3, max_length=20)
     password: str = Field(..., min_length=6)
@@ -351,6 +355,47 @@ async def get_shared_chat_api(share_id: str, db: Session = Depends(get_db)):
     except Exception as e:
         print(f"Retrieve share error: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve shared chat")
+
+@app.post("/share-session")
+async def share_session(
+    request: ShareSessionRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """Create a shareable link for entire chat session"""
+    try:
+        import json
+        share_id = str(uuid.uuid4())[:8]
+        
+        # Store session as JSON
+        session_data = json.dumps({
+            "messages": request.session_messages,
+            "document_name": request.document_name,
+            "created_by": current_user.username,
+            "created_at": datetime.utcnow().isoformat()
+        })
+        
+        # Use SharedChat table to store session (store entire JSON in "answer" field)
+        shared = models.SharedChat(
+            user_id=current_user.id,
+            share_id=share_id,
+            question=f"Session: {request.document_name}",
+            answer=session_data,  # Store entire session JSON
+            sources="",
+            document_name=request.document_name
+        )
+        db.add(shared)
+        db.commit()
+        db.refresh(shared)
+        
+        return {
+            "share_id": share_id,
+            "share_url": f"/shared/{share_id}",
+            "copy_text": f"Check out this DocuMind session on {request.document_name}!"
+        }
+    except Exception as e:
+        print(f"Session share error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create session share link")
 
 if __name__ == "__main__":
     import uvicorn
