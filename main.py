@@ -59,6 +59,12 @@ class BatchQueryRequest(BaseModel):
     questions: list[str] = Field(..., min_items=1, max_items=20)
     chat_history: list[dict] = []
 
+class ShareChatRequest(BaseModel):
+    question: str
+    answer: str
+    sources: str = ""
+    document_name: str = "SOP"
+
 class UserCreate(BaseModel):
     username: str = Field(..., min_length=3, max_length=20)
     password: str = Field(..., min_length=6)
@@ -126,6 +132,11 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 @app.get("/")
 async def root():
     return FileResponse("static/index.html")
+
+@app.get("/shared/{share_id}")
+async def view_shared_chat(share_id: str):
+    """Serve shared chat view page"""
+    return FileResponse("static/shared.html")
 
 @app.post("/ingest")
 async def ingest_document(file: UploadFile = File(...), current_user: models.User = Depends(get_current_user)):
@@ -290,10 +301,7 @@ def get_user_history(db: Session = Depends(get_db), current_user: models.User = 
 
 @app.post("/share-chat")
 async def share_chat(
-    question: str,
-    answer: str,
-    sources: str = "",
-    document_name: str = "SOP",
+    request: ShareChatRequest,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
@@ -304,10 +312,10 @@ async def share_chat(
         shared = models.SharedChat(
             user_id=current_user.id,
             share_id=share_id,
-            question=question,
-            answer=answer,
-            sources=sources,
-            document_name=document_name
+            question=request.question,
+            answer=request.answer,
+            sources=request.sources,
+            document_name=request.document_name
         )
         db.add(shared)
         db.commit()
@@ -316,15 +324,15 @@ async def share_chat(
         return {
             "share_id": share_id,
             "share_url": f"/shared/{share_id}",
-            "copy_text": f"Check out this answer from DocuMind:\n\n{question}\n\n{answer}"
+            "copy_text": f"Check out this answer from DocuMind:\n\n{request.question}\n\n{request.answer}"
         }
     except Exception as e:
         print(f"Share error: {e}")
         raise HTTPException(status_code=500, detail="Failed to create share link")
 
-@app.get("/shared/{share_id}")
-async def get_shared_chat(share_id: str, db: Session = Depends(get_db)):
-    """Retrieve a shared chat (no auth required)"""
+@app.get("/api/shared/{share_id}")
+async def get_shared_chat_api(share_id: str, db: Session = Depends(get_db)):
+    """Retrieve a shared chat (no auth required) - API endpoint"""
     try:
         shared = db.query(models.SharedChat).filter(models.SharedChat.share_id == share_id).first()
         if not shared:

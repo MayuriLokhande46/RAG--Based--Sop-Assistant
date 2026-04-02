@@ -46,14 +46,8 @@ function resetUI() {
     document.getElementById('userInitial').innerText = 'U';
 
     // Reset Chat Feed
-    document.getElementById('chatArea').innerHTML = `
-        <div class="message-container">
-            <div class="message bot">
-                <div class="message-avatar" aria-hidden="true">AI</div>
-                <div class="message-text">Hello! I am DocuMind. Upload an SOP document to begin chatting.</div>
-            </div>
-        </div>
-    `;
+    document.getElementById('chatArea').innerHTML = '';
+    appendMessage('Hello! I am DocuMind. Upload an SOP document to begin chatting.', false, null);
 
     // Reset Doc Name & Status
     document.getElementById('activeDocName').innerText = "DocuMind Enterprise";
@@ -185,9 +179,10 @@ function appendMessage(text, isUser = false, sources = null) {
     let buttonHtml = '';
     if (!isUser) {
         const messageId = 'msg_' + Date.now() + Math.random().toString(36).substr(2, 9);
+        // Store text in a data attribute instead of onclick to avoid escaping issues
         buttonHtml = `
             <div class="message-actions">
-                <button class="btn-message-action" onclick="shareMessage('${messageId}', ${JSON.stringify(text).replace(/'/g, "\\'")})" title="Share this answer">
+                <button class="btn-message-action" data-share-id="${messageId}" data-share-text="true" onclick="shareMessageHandler(this)" title="Share this answer">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
                     Share
                 </button>
@@ -214,14 +209,8 @@ function appendMessage(text, isUser = false, sources = null) {
 
 function newChat() {
     activeChatHistory = []; // Reset conversational memory
-    document.getElementById('chatArea').innerHTML = `
-        <div class="message-container">
-            <div class="message bot">
-                <div class="message-avatar">AI</div>
-                <div class="message-text">New Session Started. Upload an SOP document to begin chatting.</div>
-            </div>
-        </div>
-    `;
+    document.getElementById('chatArea').innerHTML = '';
+    appendMessage('New Session Started. Upload an SOP document to begin chatting.', false, null);
     document.getElementById('activeDocName').innerText = "DocuMind Enterprise";
     const statusEl = document.getElementById('uploadStatus')
     statusEl.innerText = "Ready";
@@ -439,7 +428,14 @@ function highlightReady() {
 let lastQuestion = '';
 let lastSources = [];
 
-async function shareMessage(messageId, answerText) {
+function shareMessageHandler(button) {
+    // Get the message text from the parent message div
+    const messageDiv = button.closest('.message-content');
+    const answerText = messageDiv.querySelector('.message-text').textContent;
+    shareMessage(answerText);
+}
+
+async function shareMessage(answerText) {
     const modal = document.getElementById('shareModal');
     const docName = document.getElementById('activeDocName').innerText || 'SOP';
     

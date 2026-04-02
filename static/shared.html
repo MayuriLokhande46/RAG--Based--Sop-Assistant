@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Shared DocuMind Chat - View shared conversation">
+    <title>DocuMind | Shared Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px;">
+        <div style="max-width: 900px; width: 100%;">
+            <!-- Header -->
+            <div style="text-align: center; margin-bottom: 40px;">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px;">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                    <h1 style="font-size: 1.8rem; font-weight: 800; color: white; margin: 0;">DocuMind Shared Chat</h1>
+                </div>
+                <p id="docName" style="color: #94a3b8; font-size: 0.95rem; margin: 0;">Loading...</p>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" style="text-align: center;">
+                <div style="display: inline-block; width: 40px; height: 40px; border: 3px solid rgba(59, 130, 246, 0.2); border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                <p style="color: #94a3b8; margin-top: 16px;">Loading shared chat...</p>
+            </div>
+
+            <!-- Chat Content -->
+            <div id="chatContent" style="display: none;">
+                <!-- Question -->
+                <div style="margin-bottom: 32px;">
+                    <div style="background: rgba(59, 130, 246, 0.06); border: 1px solid rgba(59, 130, 246, 0.1); border-radius: 24px; padding: 32px; display: flex; gap: 28px;">
+                        <div style="width: 40px; min-width: 40px; height: 40px; background: #3b82f6; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700;">U</div>
+                        <div>
+                            <div id="questionText" style="line-height: 1.8; font-size: 1.05rem; color: #f8fafc;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Answer -->
+                <div style="margin-bottom: 32px;">
+                    <div style="background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 32px; display: flex; gap: 28px;">
+                        <div style="width: 40px; min-width: 40px; height: 40px; background: #10b981; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700;">AI</div>
+                        <div>
+                            <div id="answerText" style="line-height: 1.8; font-size: 1.05rem; color: #f8fafc;"></div>
+                            <div id="sourcesContainer" style="margin-top: 24px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Metadata -->
+                <div style="text-align: center; padding: 24px; background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
+                    <p style="color: #94a3b8; margin: 0; font-size: 0.9rem;">
+                        <strong>Document:</strong> <span id="metaDoc" style="color: #3b82f6;"></span> | 
+                        <strong>By:</strong> <span id="metaUser" style="color: #10b981;"></span> | 
+                        <strong>Shared:</strong> <span id="metaDate" style="color: #f59e0b;"></span>
+                    </p>
+                </div>
+
+                <!-- Copy Buttons -->
+                <div style="display: flex; gap: 12px; margin-top: 24px; justify-content: center; flex-wrap: wrap;">
+                    <button onclick="copyQuestion()" class="btn" style="background: #3b82f6; gap: 6px; display: inline-flex; align-items: center;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                        Copy Question
+                    </button>
+                    <button onclick="copyAnswer()" class="btn" style="background: #10b981; gap: 6px; display: inline-flex; align-items: center;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                        Copy Answer
+                    </button>
+                    <button onclick="goHome()" class="btn" style="background: #6366f1; gap: 6px; display: inline-flex; align-items: center;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                        Go to App
+                    </button>
+                </div>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" style="display: none; text-align: center;">
+                <div style="background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.2); border-radius: 16px; padding: 32px;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 16px;">
+                        <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <h2 style="color: #f43f5e; margin-bottom: 8px;">Chat Not Found</h2>
+                    <p id="errorMessage" style="color: #94a3b8; margin-bottom: 24px;">The shared chat link is invalid or has expired.</p>
+                    <button onclick="goHome()" class="btn" style="background: #6366f1;">← Back to App</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.pathname);
+        const shareId = window.location.pathname.split('/').pop();
+
+        async function loadSharedChat() {
+            try {
+                const response = await fetch(`/api/shared/${shareId}`);
+                
+                if (!response.ok) {
+                    showError('Chat not found or has been removed.');
+                    return;
+                }
+
+                const data = await response.json();
+                displayChat(data);
+            } catch (error) {
+                console.error('Error loading shared chat:', error);
+                showError('Failed to load shared chat. Please try again.');
+            }
+        }
+
+        function displayChat(data) {
+            // Hide loading, show content
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('chatContent').style.display = 'block';
+
+            // Question
+            document.getElementById('questionText').textContent = data.question;
+
+            // Answer
+            document.getElementById('answerText').textContent = data.answer;
+
+            // Sources
+            if (data.sources && data.sources.length > 0) {
+                const sourcesHtml = `
+                    <div style="margin-top: 16px; padding: 12px 16px; background: rgba(255,255,255,0.02); border-radius: 12px; border-left: 3px solid #3b82f6;">
+                        <div style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;">Verified Context</div>
+                        <div>${data.sources.map(s => `<span style="display: inline-flex; align-items: center; padding: 4px 10px; margin: 4px 8px 4px 0; background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 6px; color: #3b82f6; font-size: 0.82rem; font-weight: 600;">${s}</span>`).join('')}</div>
+                    </div>
+                `;
+                document.getElementById('sourcesContainer').innerHTML = sourcesHtml;
+            }
+
+            // Metadata
+            document.getElementById('metaDoc').textContent = data.document_name || 'SOP';
+            document.getElementById('metaUser').textContent = data.created_by || 'DocuMind';
+            document.getElementById('metaDate').textContent = new Date(data.created_at).toLocaleDateString();
+
+            // Store for copy
+            window.sharedQuestion = data.question;
+            window.sharedAnswer = data.answer;
+        }
+
+        function showError(message) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('chatContent').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        function copyQuestion() {
+            const text = document.getElementById('questionText').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✓ Question copied!');
+            });
+        }
+
+        function copyAnswer() {
+            const text = document.getElementById('answerText').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✓ Answer copied!');
+            });
+        }
+
+        function goHome() {
+            window.location.href = '/';
+        }
+
+        // Load on page load
+        window.addEventListener('load', loadSharedChat);
+    </script>
+</body>
+</html>
