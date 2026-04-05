@@ -998,4 +998,373 @@ body::before {
 }
 
 
+/* --- DOCUMENT MANAGEMENT STYLES --- */
+
+.document-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.document-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    transition: all 0.3s var(--transition-smooth);
+}
+
+.document-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.document-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.document-name {
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 4px;
+    word-break: break-all;
+}
+
+.document-meta {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.document-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: 16px;
+}
+
+.btn-document-action {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s var(--transition-smooth);
+}
+
+.btn-document-delete {
+    background: rgba(244, 63, 94, 0.1);
+    border: 1px solid rgba(244, 63, 94, 0.2);
+    color: var(--accent-rose);
+}
+
+.btn-document-delete:hover {
+    background: var(--accent-rose);
+    color: white;
+    box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
+}
+
+
+/* --- MOBILE RESPONSIVE STYLES --- */
+
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 280px;
+    }
+    .message-container {
+        max-width: 800px;
+        padding: 0 30px;
+    }
+    .input-box {
+        max-width: 900px;
+        padding: 20px 70px 20px 30px;
+    }
+}
+
+@media (max-width: 850px) {
+    /* Hide sidebar on mobile */
+    .sidebar {
+        display: none;
+    }
+    /* Adjust main content for mobile */
+    .main-content {
+        margin-left: 0;
+    }
+    /* Mobile top navigation */
+    .top-nav {
+        padding: 16px 20px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .top-nav h1 {
+        font-size: 1.2rem;
+        order: 1;
+        flex: 1;
+        min-width: 0;
+    }
+    .upload-tools {
+        order: 2;
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: space-between;
+    }
+    .upload-tools>* {
+        flex: 1;
+        min-width: 120px;
+    }
+    /* Mobile message containers */
+    .message-container {
+        padding: 0 16px;
+        margin-bottom: 32px;
+    }
+    .message {
+        padding: 20px;
+        gap: 16px;
+        font-size: 0.95rem;
+    }
+    .message-avatar {
+        width: 36px;
+        min-width: 36px;
+        height: 36px;
+        font-size: 0.8rem;
+    }
+    /* Mobile input area */
+    .bottom-shelf {
+        padding: 16px;
+    }
+    .input-box {
+        min-height: 80px;
+        padding: 16px 60px 16px 20px;
+        border-radius: 20px;
+        margin-bottom: 12px;
+    }
+    .input-box textarea {
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+    .send-pill {
+        width: 40px;
+        height: 40px;
+        right: 8px;
+        bottom: 8px;
+    }
+    /* Mobile auth card */
+    .auth-card {
+        margin: 20px;
+        padding: 32px 24px;
+        max-width: none;
+    }
+    .auth-card h2 {
+        font-size: 1.8rem;
+        margin-bottom: 24px;
+    }
+    .auth-card input {
+        padding: 16px 18px 16px 48px;
+        font-size: 0.95rem;
+    }
+    .input-container .icon {
+        left: 16px;
+    }
+    .auth-card .btn {
+        padding: 16px;
+        font-size: 1rem;
+    }
+    /* Mobile share modal */
+    .share-modal-content {
+        margin: 20px;
+        width: calc(100% - 40px);
+        max-width: none;
+    }
+    .share-modal-header,
+    .share-modal-body {
+        padding: 20px;
+    }
+    .share-modal-header h3 {
+        font-size: 1.1rem;
+    }
+    /* Mobile document management */
+    .document-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .document-actions {
+        margin-left: 0;
+        align-self: flex-end;
+    }
+    /* Mobile buttons */
+    .btn {
+        padding: 8px 16px;
+        font-size: 0.85rem;
+    }
+    .status-highlight-btn {
+        padding: 8px 14px;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Extra small screens */
+    .top-nav h1 {
+        font-size: 1.1rem;
+    }
+    .upload-tools {
+        flex-direction: column;
+        gap: 6px;
+    }
+    .upload-tools>* {
+        width: 100%;
+        min-width: auto;
+    }
+    .message {
+        padding: 16px;
+        font-size: 0.9rem;
+    }
+    .message-avatar {
+        width: 32px;
+        min-width: 32px;
+        height: 32px;
+        font-size: 0.7rem;
+    }
+    .input-box {
+        min-height: 70px;
+        padding: 12px 50px 12px 16px;
+    }
+    .input-box textarea {
+        font-size: 0.95rem;
+    }
+    .send-pill {
+        width: 36px;
+        height: 36px;
+    }
+    .auth-card {
+        margin: 10px;
+        padding: 24px 16px;
+    }
+    .auth-card h2 {
+        font-size: 1.5rem;
+    }
+    .share-modal-content {
+        margin: 10px;
+        width: calc(100% - 20px);
+    }
+    .share-modal-header,
+    .share-modal-body {
+        padding: 16px;
+    }
+    .document-list {
+        gap: 8px;
+    }
+    .document-item {
+        padding: 12px;
+    }
+    .document-name {
+        font-size: 0.9rem;
+    }
+    .document-meta {
+        font-size: 0.75rem;
+    }
+}
+
+
+/* --- TOUCH OPTIMIZATIONS --- */
+
+@media (hover: none) and (pointer: coarse) {
+    /* Touch device optimizations */
+    .btn:hover,
+    .btn-message-action:hover,
+    .status-highlight-btn:hover,
+    .logout-btn:hover,
+    .new-chat-btn:hover,
+    .history-item:hover {
+        transform: none;
+        box-shadow: none;
+    }
+    .btn:active,
+    .btn-message-action:active,
+    .status-highlight-btn:active,
+    .logout-btn:active,
+    .new-chat-btn:active,
+    .history-item:active {
+        transform: scale(0.98);
+        transition: transform 0.1s ease;
+    }
+    /* Larger touch targets */
+    .btn,
+    .btn-message-action,
+    .status-highlight-btn,
+    .logout-btn,
+    .new-chat-btn {
+        min-height: 44px;
+        padding: 12px 16px;
+    }
+    .history-item {
+        min-height: 48px;
+        padding: 16px;
+    }
+    .send-pill {
+        width: 50px;
+        height: 50px;
+    }
+}
+
+
+/* --- LANDSCAPE MOBILE --- */
+
+@media (max-width: 850px) and (orientation: landscape) {
+    .auth-card {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    .message-container {
+        margin-bottom: 24px;
+    }
+    .chat-feed {
+        padding: 40px 0;
+    }
+    .bottom-shelf {
+        padding: 12px;
+    }
+}
+
+
+/* --- HIGH CONTRAST MODE --- */
+
+@media (prefers-contrast: high) {
+     :root {
+        --glass-bg: rgba(0, 0, 0, 0.9);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --text-main: #ffffff;
+        --text-muted: #cccccc;
+    }
+    .message.user {
+        background: rgba(59, 130, 246, 0.2);
+        border: 2px solid var(--primary-accent);
+    }
+    .message.bot {
+        background: rgba(16, 185, 129, 0.1);
+        border: 2px solid var(--accent-emerald);
+    }
+}
+
+
+/* --- REDUCED MOTION --- */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    .status-ready {
+        animation: none;
+    }
 }

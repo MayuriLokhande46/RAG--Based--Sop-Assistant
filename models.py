@@ -13,6 +13,21 @@ class User(Base):
 
     chats = relationship("ChatHistory", back_populates="user")
     shared_chats = relationship("SharedChat", back_populates="user")
+    documents = relationship("Document", back_populates="user")
+
+class Document(Base):
+    __tablename__ = "documents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    filename = Column(String)
+    original_filename = Column(String)
+    file_size = Column(Integer)
+    upload_date = Column(DateTime, default=datetime.datetime.utcnow)
+    namespace = Column(String)  # Pinecone namespace
+    status = Column(String, default="active")  # active, deleted
+
+    user = relationship("User", back_populates="documents")
 
 class ChatHistory(Base):
     __tablename__ = "chat_history"

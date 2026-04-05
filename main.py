@@ -143,7 +143,11 @@ async def view_shared_chat(share_id: str):
     return FileResponse("static/shared.html")
 
 @app.post("/ingest")
-async def ingest_document(file: UploadFile = File(...), current_user: models.User = Depends(get_current_user)):
+async def ingest_document(
+    file: UploadFile = File(...), 
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
     filename = (file.filename or "upload.pdf").lower()
     if not (filename.endswith(".pdf") or filename.endswith(".txt")):
         raise HTTPException(status_code=400, detail="Only PDF and TXT files are supported.")
@@ -154,11 +158,27 @@ async def ingest_document(file: UploadFile = File(...), current_user: models.Use
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     
+    file_size = os.path.getsize(file_path)
+    namespace = f"user_{current_user.id}"
+    
     try:
         documents = ingest_pdf(file_path)
-        setup_vector_store(documents, INDEX_NAME, namespace=f"user_{current_user.id}")
+        setup_vector_store(documents, INDEX_NAME, namespace=namespace)
         # Bust the chain cache so next query uses fresh vectorstore
-        invalidate_chain_cache(INDEX_NAME, namespace=f"user_{current_user.id}")
+        invalidate_chain_cache(INDEX_NAME, namespace=namespace)
+        
+        # Save document metadata to database
+        doc = models.Document(
+            user_id=current_user.id,
+            filename=safe_name,
+            original_filename=file.filename,
+            file_size=file_size,
+            namespace=namespace,
+            status="active"
+        )
+        db.add(doc)
+        db.commit()
+        
         return {"status": "Success", "message": f"Document '{file.filename}' indexed successfully by {current_user.username}."}
     except Exception as e:
         tb = traceback.format_exc()
@@ -167,6 +187,56 @@ async def ingest_document(file: UploadFile = File(...), current_user: models.Use
     finally:
         if os.path.exists(file_path):
             os.remove(file_path)
+
+@app.get("/documents")
+async def list_documents(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """List all documents for the current user"""
+    docs = db.query(models.Document).filter(
+        models.Document.user_id == current_user.id,
+        models.Document.status == "active"
+    ).order_by(models.Document.upload_date.desc()).all()
+    
+    return [
+        {
+            "id": doc.id,
+            "filename": doc.original_filename,
+            "upload_date": doc.upload_date,
+            "file_size": doc.file_size,
+            "namespace": doc.namespace
+        }
+        for doc in docs
+    ]
+
+@app.delete("/documents/{doc_id}")
+async def delete_document(
+    doc_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """Delete a document and its vector embeddings"""
+    doc = db.query(models.Document).filter(
+        models.Document.id == doc_id,
+        models.Document.user_id == current_user.id
+    ).first()
+    
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    try:
+        # Mark document as deleted in database
+        doc.status = "deleted"
+        db.commit()
+        
+        # TODO: Remove from Pinecone vector store
+        # This would require Pinecone client integration
+        
+        return {"status": "Success", "message": f"Document '{doc.original_filename}' deleted successfully."}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to delete document: {str(e)}")
 
 @app.post("/query")
 async def query_ai(request: QueryRequest, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):

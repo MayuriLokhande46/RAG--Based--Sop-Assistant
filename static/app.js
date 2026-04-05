@@ -1,5 +1,8 @@
 let isSignupMode = false;
 let activeChatHistory = []; // --- CONVERSATIONAL MEMORY ---
+let editMode = false;
+let currentChatController = null;
+let isGenerating = false;
 
 // --- AUTH ---
 function checkAuth() {
@@ -176,8 +179,17 @@ function appendMessage(text, isUser = false, sources = null) {
         `;
     }
 
-    let buttonHtml = '';
-    // Share button removed - use Share Session button in header instead
+    let actionHtml = '';
+    if (isUser) {
+        actionHtml = `
+            <div class="message-actions">
+                <button class="btn-message-action" type="button" onclick="startEditMessage(this)">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="m16.5 3.5 4 4L7 21H3v-4L16.5 3.5Z"></path></svg>
+                    Edit
+                </button>
+            </div>
+        `;
+    }
 
     wrapper.innerHTML = `
         <div class="message ${isUser ? 'user' : 'bot'}">
@@ -185,6 +197,7 @@ function appendMessage(text, isUser = false, sources = null) {
             <div class="message-content">
                 <div class="message-text">${text}</div>
                 ${sourcesHtml}
+                ${actionHtml}
             </div>
         </div>
     `;
@@ -193,6 +206,52 @@ function appendMessage(text, isUser = false, sources = null) {
     setTimeout(() => {
         container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
     }, 100);
+}
+
+function startEditMessage(button) {
+    if (currentChatController) {
+        currentChatController.abort();
+        currentChatController = null;
+    }
+    isGenerating = false;
+
+    const messageContainer = button.closest('.message-container');
+    if (!messageContainer) return;
+
+    const messageText = messageContainer.querySelector('.message-text').textContent;
+    const nextMessage = messageContainer.nextElementSibling;
+    if (nextMessage && nextMessage.querySelector('.message')?.classList.contains('bot')) {
+        nextMessage.remove();
+    }
+    messageContainer.remove();
+
+    const input = document.getElementById('questionInput');
+    input.value = messageText;
+    input.style.height = 'auto';
+    input.style.height = input.scrollHeight + 'px';
+    input.focus();
+
+    // If this was the latest question, remove its pair from the history so the edited version replaces it.
+    const lastIndex = activeChatHistory.length - 2;
+    if (lastIndex >= 0
+        && activeChatHistory[lastIndex].role === 'user'
+        && activeChatHistory[lastIndex].content === messageText
+        && activeChatHistory[lastIndex + 1]?.role === 'assistant') {
+        activeChatHistory.pop();
+        activeChatHistory.pop();
+    }
+
+    editMode = true;
+    document.getElementById('sendBtn').innerHTML = 'Update';
+}
+
+function resetEditState() {
+    editMode = false;
+    document.getElementById('sendBtn').innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+        </svg>
+    `;
 }
 
 function newChat() {
@@ -266,6 +325,7 @@ async function uploadDocument() {
 }
 
 async function askQuestion() {
+    if (isGenerating) return;
     const input = document.getElementById('questionInput');
     const rawText = input.value.trim();
     if(!rawText) return;
@@ -273,6 +333,9 @@ async function askQuestion() {
     // Split into separate questions based on newlines
     const questions = rawText.split('\n').map(q => q.trim()).filter(q => q.length > 0);
     if (questions.length === 0) return;
+
+    isGenerating = true;
+    currentChatController = new AbortController();
 
     // UI Reset
     input.value = '';
@@ -305,7 +368,8 @@ async function askQuestion() {
                 body: JSON.stringify({ 
                     question: questions[0],
                     chat_history: activeChatHistory
-                })
+                }),
+                signal: currentChatController.signal
             });
             data = await res.json();
             
@@ -317,8 +381,10 @@ async function askQuestion() {
                 appendMessage(data.answer, false, data.sources || null); 
                 activeChatHistory.push({ role: "user", content: questions[0] });
                 activeChatHistory.push({ role: "assistant", content: data.answer });
+                if (editMode) resetEditState();
             } else {
                 appendMessage("Error: " + (data.detail || "Server error"), false);
+                if (editMode) resetEditState();
             }
         } else {
             // BATCH QUESTIONS MODE
@@ -328,7 +394,8 @@ async function askQuestion() {
                 body: JSON.stringify({ 
                     questions: questions,
                     chat_history: activeChatHistory
-                })
+                }),
+                signal: currentChatController.signal
             });
             data = await res.json();
 
@@ -341,8 +408,10 @@ async function askQuestion() {
                     activeChatHistory.push({ role: "user", content: r.question });
                     activeChatHistory.push({ role: "assistant", content: r.answer });
                 });
+                if (editMode) resetEditState();
             } else {
                 appendMessage("Batch processing error: " + (data.detail || "Server error"), false);
+                if (editMode) resetEditState();
             }
         }
 
@@ -352,7 +421,12 @@ async function askQuestion() {
 
     } catch(e) { 
         if(document.getElementById('typingIndicator')) document.getElementById('typingIndicator').remove();
-        appendMessage("Server unreachable. Please check your connection.", false); 
+        if (e.name !== 'AbortError') {
+            appendMessage("Server unreachable. Please check your connection.", false); 
+        }
+    } finally {
+        isGenerating = false;
+        currentChatController = null;
     }
 }
 
