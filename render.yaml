@@ -13,7 +13,7 @@ services:
       - key: PINECONE_INDEX_NAME
         value: documind-enterprise-v2
       - key: GOOGLE_MODEL_NAME
-        value: gemini-2.5-flash
+        value: gemini-2.0-flash
       - key: JWT_SECRET_KEY
         sync: false
       - key: PYTHON_VERSION
