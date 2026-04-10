@@ -4,7 +4,8 @@ langchain-community
 langchain-core
 langchain
 langchain-google-genai
-langchain-pinecone
+langchain-pinecone==0.2.13
+simsimd>=3.6.3
 pinecone
 pypdf
 python-dotenv
@@ -18,4 +19,3 @@ passlib[bcrypt]
 google-generativeai
 google-genai
 langchain-classic
-
