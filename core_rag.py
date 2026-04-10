@@ -10,7 +10,7 @@ load_dotenv()
 
 print("--- CORE_RAG: Version 3.6 (Stable History) Initialized ---")
 
-EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
+EMBEDDING_MODEL_NAME = "models/gemini-embedding-001"
 DEFAULT_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "documind-enterprise-v2")
 # Use GOOGLE_MODEL_NAME from .env
 DEFAULT_GOOGLE_MODEL = os.getenv("GOOGLE_MODEL_NAME", "gemini-1.5-flash")
@@ -33,9 +33,14 @@ def invalidate_chain_cache(index_name: Optional[str] = None, namespace: Optional
 def _get_embeddings():
     global _embeddings_cache
     if _embeddings_cache is None:
-        print("Initializing HuggingFace Embeddings (first time)...")
-        from langchain_huggingface import HuggingFaceEmbeddings
-        _embeddings_cache = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
+        print(f"Initializing Google Generative AI Embeddings ({EMBEDDING_MODEL_NAME})...")
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
+        api_key = _require_env("GOOGLE_API_KEY")
+        _embeddings_cache = GoogleGenerativeAIEmbeddings(
+            model=EMBEDDING_MODEL_NAME,
+            google_api_key=api_key,
+            output_dimensionality=768
+        )
     return _embeddings_cache
 
 def _require_env(name: str) -> str:
@@ -82,7 +87,7 @@ def setup_vector_store(documents: List[Optional['Document']], index_name: str, n
     if index_name not in pc.list_indexes().names():
         pc.create_index(
             name=index_name,
-            dimension=384,
+            dimension=768,
             metric="cosine",
             spec=ServerlessSpec(cloud="aws", region="us-east-1")
         )
@@ -115,11 +120,14 @@ def get_retrieval_chain(index_name: str = DEFAULT_INDEX_NAME, namespace: Optiona
     
     # Typos handling
     model_name = DEFAULT_GOOGLE_MODEL.strip()
-    if model_name.startswith("ggemini"): model_name = model_name.replace("ggemini", "gemini")
-    elif model_name.startswith("emini"): model_name = "gemini-" + model_name
+    if not model_name.startswith("models/"):
+        model_name = f"models/{model_name}"
     
-    primary_llm = ChatGoogleGenerativeAI(model=model_name, google_api_key=api_key, temperature=0, max_retries=5, api_version="v1")
-    fallback_llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro", google_api_key=api_key, temperature=0, max_retries=5, api_version="v1")
+    # Typos handling (optional now but kept for robustness)
+    if "ggemini" in model_name: model_name = model_name.replace("ggemini", "gemini")
+    
+    primary_llm = ChatGoogleGenerativeAI(model=model_name, google_api_key=api_key, temperature=0, max_retries=5)
+    fallback_llm = ChatGoogleGenerativeAI(model="models/gemini-2.5-flash", google_api_key=api_key, temperature=0, max_retries=5)
     llm = primary_llm.with_fallbacks([fallback_llm])
     
     # Manual History Prompt (Compatible with all versions)

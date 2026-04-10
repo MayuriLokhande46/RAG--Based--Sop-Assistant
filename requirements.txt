@@ -1,13 +1,10 @@
 fastapi
 uvicorn
-langchain-community>=0.4.0
+langchain-community
 langchain-core
 langchain
 langchain-google-genai
-langchain-huggingface
-sentence-transformers
-langchain-classic
-langchain-pinecone==0.2.13
+langchain-pinecone
 pinecone
 pypdf
 python-dotenv
@@ -19,3 +16,6 @@ python-jose[cryptography]
 bcrypt==4.0.1
 passlib[bcrypt]
 google-generativeai
+google-genai
+langchain-classic
+

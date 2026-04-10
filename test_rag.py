@@ -11,7 +11,10 @@ try:
     print("Getting chain...")
     chain = get_retrieval_chain(INDEX_NAME, namespace="user_1")
     print("Invoking chain with input 'Hello'...")
-    response = chain.invoke({"input": "Hello, what is in the document?"})
+    response = chain.invoke({
+        "input": "Hello, what is in the document?",
+        "chat_history": ""
+    })
     print("Chain invoked successfully!")
     print("Response keys:", response.keys())
     print("Answer:", response.get("answer"))
