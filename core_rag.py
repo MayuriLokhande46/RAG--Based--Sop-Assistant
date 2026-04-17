@@ -13,7 +13,7 @@ print("--- CORE_RAG: Version 3.6 (Stable History) Initialized ---")
 EMBEDDING_MODEL_NAME = "models/gemini-embedding-001"
 DEFAULT_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "documind-enterprise-v2")
 # Use GOOGLE_MODEL_NAME from .env
-DEFAULT_GOOGLE_MODEL = os.getenv("GOOGLE_MODEL_NAME", "gemini-1.5-flash")
+DEFAULT_GOOGLE_MODEL = os.getenv("GOOGLE_MODEL_NAME", "gemini-2.5-flash")
 
 # Global singletons to avoid re-loading on every request
 _embeddings_cache = None
@@ -116,19 +116,36 @@ def get_retrieval_chain(index_name: str = DEFAULT_INDEX_NAME, namespace: Optiona
 
     _validate_config()
     vectorstore = PineconeVectorStore(index_name=index_name, embedding=_get_embeddings(), namespace=namespace)
-    api_key = _require_env("GOOGLE_API_KEY")
+    google_api_key = _require_env("GOOGLE_API_KEY")
     
-    # Typos handling
+    # Typos handling for Gemini
     model_name = DEFAULT_GOOGLE_MODEL.strip()
-    if not model_name.startswith("models/"):
-        model_name = f"models/{model_name}"
+    if model_name.startswith("models/"):
+        model_name = model_name.replace("models/", "")
     
-    # Typos handling (optional now but kept for robustness)
-    if "ggemini" in model_name: model_name = model_name.replace("ggemini", "gemini")
-    
-    primary_llm = ChatGoogleGenerativeAI(model=model_name, google_api_key=api_key, temperature=0, max_retries=5)
-    fallback_llm = ChatGoogleGenerativeAI(model="models/gemini-2.5-flash", google_api_key=api_key, temperature=0, max_retries=5)
-    llm = primary_llm.with_fallbacks([fallback_llm])
+    # Check for Groq API Key
+    groq_api_key = os.getenv("GROQ_API_KEY")
+    if groq_api_key:
+        try:
+            from langchain_groq import ChatGroq
+            print("--- LLM: Using Groq (Llama-3.3-70B) for High Speed ---")
+            primary_llm = ChatGroq(
+                model=os.getenv("GROQ_MODEL_NAME", "llama-3.3-70b-versatile"),
+                groq_api_key=groq_api_key,
+                temperature=0,
+                max_retries=5
+            )
+            # Gemini as solid fallback
+            fallback_llm = ChatGoogleGenerativeAI(model=model_name, google_api_key=google_api_key, temperature=0, max_retries=5)
+            llm = primary_llm.with_fallbacks([fallback_llm])
+        except Exception as e:
+            print(f"!!! Groq Initialization Error, falling back to Gemini: {e}")
+            llm = ChatGoogleGenerativeAI(model=model_name, google_api_key=google_api_key, temperature=0, max_retries=5)
+    else:
+        print("--- LLM: Using Google Gemini (Default) ---")
+        primary_llm = ChatGoogleGenerativeAI(model=model_name, google_api_key=google_api_key, temperature=0, max_retries=5)
+        fallback_llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=google_api_key, temperature=0, max_retries=5)
+        llm = primary_llm.with_fallbacks([fallback_llm])
     
     # Manual History Prompt (Compatible with all versions)
     system_prompt = (
